@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>Anna Photo</title>
+
+  <!-- BOOTSTRAP -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- NAVBAR -->
+
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
+
+  <div class="container">
+
+    <a class="navbar-brand" href="#home">Anna Photo</a>
+
+    <button class="navbar-toggler" type="button"
+            data-bs-toggle="collapse"
+            data-bs-target="#navbarNav">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <div class="collapse navbar-collapse justify-content-between" id="navbarNav">
+
+      <ul class="navbar-nav mx-auto">
+        <li class="nav-item"><a class="nav-link" href="#home">Главная</a></li>
+        <li class="nav-item"><a class="nav-link" href="#about">О нас</a></li>
+        <li class="nav-item"><a class="nav-link" href="#services">Услуги</a></li>
+        <li class="nav-item"><a class="nav-link" href="#contact">Контакты</a></li>
+      </ul>
+
+      <a href="#contact" class="btn btn-warning">Оставить заявку</a>
+
+    </div>
+
+  </div>
+
+</nav>
+
+
+<main>
+
+<!-- HERO -->
+
+<section id="home" class="hero">
+
+  <div class="hero-overlay"></div>
+
+  <div class="hero-content">
+    <h1>Фотосессии с живыми эмоциями</h1>
+    <p>Портреты, свадьбы и семейные съёмки</p>
+    <a href="#contact" class="hero-btn">Записаться</a>
+  </div>
+
+</section>
+
+
+<!-- ADVANTAGES -->
+
+<section class="advantages">
+
+  <h2>Почему выбирают меня</h2>
+
+  <div class="advantages-grid">
+
+    <div class="adv-card">
+      <div class="adv-icon">📷</div>
+      <h3>Опыт</h3>
+      <p>Более 7 лет съёмки</p>
+    </div>
+
+    <div class="adv-card">
+      <div class="adv-icon">✨</div>
+      <h3>Качество</h3>
+      <p>Профессиональная обработка</p>
+    </div>
+
+    <div class="adv-card">
+      <div class="adv-icon">❤️</div>
+      <h3>Подход</h3>
+      <p>Индивидуальная работа</p>
+    </div>
+
+  </div>
+
+</section>
+
+
+<!-- ABOUT -->
+
+<section id="about">
+
+  <h2>О фотографе</h2>
+
+  <article class="about">
+
+    <img src="https://picsum.photos/id/1005/400/400" alt="Фотограф">
+
+    <div>
+      <h3>Анна Иванова</h3>
+      <p>Опыт более 7 лет</p>
+    </div>
+
+  </article>
+
+</section>
+
+
+<!-- SERVICES -->
+
+<section id="services">
+  <h2>Услуги</h2>
+  <ul class="services">
+    <li>Портрет — 3500₽</li>
+    <li>Свадьба — 15000₽</li>
+    <li>Семейная — 6000₽</li>
+  </ul>
+</section>
+
+
+<!-- CONTACT -->
+
+<section id="contact">
+
+  <h2>Оставить заявку</h2>
+
+  <form class="contact-form" id="contactForm" novalidate>
+
+    <div class="form-group">
+      <input type="text" name="name" placeholder="Имя" required>
+      <span class="error-message"></span>
+    </div>
+
+    <div class="form-group">
+      <input type="email" name="email" placeholder="Email" required>
+      <span class="error-message"></span>
+    </div>
+
+    <div class="form-group">
+      <input type="tel" name="phone" placeholder="Телефон">
+      <span class="error-message"></span>
+    </div>
+
+    <div class="form-group">
+      <textarea name="message" placeholder="Сообщение" required></textarea>
+      <span class="error-message"></span>
+    </div>
+
+    <button type="submit" class="submit-btn">Отправить</button>
+
+  </form>
+
+</section>
+
+</main>
+
+
+<footer>
+  <p>© 2026 Anna Photo</p>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="index.js"></script>
+
+</body>
+</html>
