@@ -18,7 +18,7 @@ from telegram.ext import (
 from scraper import YouTubeScraper
 from ai_handler import AIAnalyst
 
-# Настройка логирования для Railway
+# Настройка логирования для Railway (Выводит всё в консоль)
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s'
@@ -26,7 +26,6 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 load_dotenv()
-
 
 class Config:
     """Конфигурация приложения."""
@@ -37,10 +36,8 @@ class Config:
     TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
     CHANNELS = [url.strip() for url in os.getenv("CHANNEL_URL", "").split(",") if url.strip()]
 
-
 class FileManager:
     """Безопасная работа с файлами данных."""
-
     @staticmethod
     def load(filepath: str, default: Any) -> Any:
         if not os.path.exists(filepath):
@@ -61,10 +58,8 @@ class FileManager:
         except Exception as e:
             logger.error(f"Ошибка сохранения {filepath}: {e}")
 
-
 class BotInterface:
     """Кнопки обратной связи."""
-
     @staticmethod
     def get_feedback_keyboard() -> InlineKeyboardMarkup:
         return InlineKeyboardMarkup([
@@ -72,38 +67,36 @@ class BotInterface:
              InlineKeyboardButton("👎 Пропустить", callback_data="dislike")]
         ])
 
-
 class UpdateHandler:
     """Логика проверки обновлений YouTube."""
-
     def __init__(self, bot_application: Application):
         self.app = bot_application
         self.ai = AIAnalyst()
 
     async def run_check(self, context: ContextTypes.DEFAULT_TYPE):
         """Главный цикл проверки, запускаемый JobQueue."""
-        logger.info(">>> НАЧАЛО ПРОВЕРКИ YOUTUBE КАНАЛОВ")
-
+        logger.info(">>> ПРОВЕРКА YOUTUBE: Запуск цикла...")
+        
         states = FileManager.load(Config.STATE_FILE, {})
         subs = FileManager.load(Config.SUB_FILE, {})
 
         if not subs:
-            logger.warning("Проверка отменена: в базе 0 подписчиков.")
+            logger.warning(">>> ПРОВЕРКА ПРЕРВАНА: В базе нет активных подписчиков!")
             return
 
         if not Config.CHANNELS:
-            logger.error("Список каналов пуст! Проверь переменную CHANNEL_URL.")
+            logger.error(">>> ОШИБКА: Список CHANNEL_URL пуст!")
             return
 
+        logger.info(f">>> ПРОВЕРКА: Обрабатываю {len(Config.CHANNELS)} каналов...")
         for url in Config.CHANNELS:
             try:
-                # Ограничиваем время проверки одного канала, чтобы бот не завис
                 await asyncio.wait_for(self._process_channel(url, states, subs, context), timeout=60)
             except Exception as e:
-                logger.error(f"Ошибка при обработке {url}: {e}")
+                logger.error(f"Ошибка на канале {url}: {e}")
 
         FileManager.save(Config.STATE_FILE, states)
-        logger.info(">>> ЦИКЛ ПРОВЕРКИ ЗАВЕРШЕН")
+        logger.info(">>> ПРОВЕРКА: Цикл успешно завершен.")
 
     async def _process_channel(self, url: str, states: dict, subs: dict, context: ContextTypes.DEFAULT_TYPE):
         scraper = YouTubeScraper(url)
@@ -114,19 +107,13 @@ class UpdateHandler:
             last_id = str(states.get(url, ""))
 
             if video_id != last_id:
-                logger.info(f"Найдено новое видео: {video['title']}")
-
-                # Анализ через ИИ
+                logger.info(f"НОВОЕ ВИДЕО: {video['title']}")
                 report = self.ai.analyze_video(video['title'], video['description'])
                 message_text = self._format_message(video, report)
-
-                # Рассылка всем подписчикам
                 await self._broadcast_message(list(subs.keys()), message_text, context)
-
-                # Обновляем ID последнего видео
                 states[url] = video_id
             else:
-                logger.info(f"На канале '{video.get('channel_name', url)}' новых видео нет.")
+                logger.info(f"Канал {video.get('channel_name', 'YouTube')}: обновлений нет.")
 
     def _format_message(self, video: dict, report: str) -> str:
         return (
@@ -144,71 +131,58 @@ class UpdateHandler:
                     chat_id=chat_id,
                     text=text,
                     parse_mode=ParseMode.HTML,
-                    reply_markup=keyboard,
-                    disable_web_page_preview=False
+                    reply_markup=keyboard
                 )
-                logger.info(f"Сообщение отправлено пользователю {chat_id}")
+                logger.info(f"Отправлено пользователю {chat_id}")
             except Exception as e:
-                logger.error(f"Не удалось отправить сообщение {chat_id}: {e}")
-
+                logger.error(f"Ошибка отправки {chat_id}: {e}")
 
 # --- ОБРАБОТЧИКИ КОМАНД ---
 
 async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text(
-        "👋 Привет! Я твой ИИ-аналитик YouTube.\n\n"
-        "Я слежу за выбранными каналами и присылаю краткие обзоры новых видео.\n"
-        "Нажми /subscribe, чтобы начать получать уведомления."
-    )
-
+    await update.message.reply_text("👋 Бот активен! Нажми /subscribe для получения обзоров.")
 
 async def cmd_subscribe(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    # Этот лог мы ДОЛЖНЫ увидеть в Railway сразу после нажатия кнопки
+    logger.info(f"!!! ПОЛУЧЕНА КОМАНДА /SUBSCRIBE ОТ {update.effective_chat.id} !!!")
+    
     chat_id = str(update.effective_chat.id)
     subs = FileManager.load(Config.SUB_FILE, {})
 
     if chat_id not in subs:
-        subs[chat_id] = {"subscribed_at": str(asyncio.get_event_loop().time())}
+        subs[chat_id] = {"active": True}
         FileManager.save(Config.SUB_FILE, subs)
-        logger.info(f"Новый подписчик: {chat_id}")
-        await update.message.reply_text("✅ Готово! Теперь вы будете получать обзоры новых видео.")
+        logger.info(f"Пользователь {chat_id} добавлен в базу.")
+        await update.message.reply_text("✅ Вы успешно подписаны! Ждите обновлений.")
     else:
-        await update.message.reply_text("🔔 Вы уже подписаны на обновления.")
-
+        await update.message.reply_text("🔔 Вы уже есть в списке подписчиков.")
 
 async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
-    await query.edit_message_reply_markup(reply_markup=None)  # Убираем кнопки после нажатия
-    await context.bot.send_message(chat_id=query.message.chat_id, text=f"Спасибо за ваш отзыв: {query.data}!")
-
+    await context.bot.send_message(chat_id=query.message.chat_id, text="Спасибо за ваш голос!")
 
 def main():
     if not Config.TELEGRAM_TOKEN:
-        logger.error("КРИТИЧЕСКАЯ ОШИБКА: TELEGRAM_TOKEN не найден!")
+        logger.error("TOKEN не найден!")
         return
 
-    # Создаем приложение
     app = ApplicationBuilder().token(Config.TELEGRAM_TOKEN).build()
+    handler = UpdateHandler(app)
 
-    # Инициализируем наш обработчик обновлений
-    update_handler = UpdateHandler(app)
-
-    # Регистрация команд
     app.add_handler(CommandHandler("start", cmd_start))
     app.add_handler(CommandHandler("subscribe", cmd_subscribe))
     app.add_handler(CallbackQueryHandler(handle_callback))
 
-    # Настройка планировщика (JobQueue)
     if app.job_queue:
-        # Запускать каждые 10 минут (Config.CHECK_INTERVAL), первый запуск через 10 сек.
-        app.job_queue.run_repeating(update_handler.run_check, interval=Config.CHECK_INTERVAL, first=10)
-        logger.info("Планировщик проверок YouTube запущен.")
+        # Ставим проверку каждые 10 минут, первый запуск через 10 секунд
+        app.job_queue.run_repeating(handler.run_check, interval=Config.CHECK_INTERVAL, first=10)
+        logger.info("ПЛАНИРОВЩИК: Успешно запущен.")
     else:
-        logger.error("JobQueue недоступен. Проверьте установку python-telegram-bot[job-queue]")
+        logger.error("ПЛАНИРОВЩИК: Ошибка JobQueue!")
 
-    logger.info("Бот запущен и ожидает сообщений...")
+    logger.info("БОТ ЗАПУЩЕН. Ожидание сообщений...")
     app.run_polling()
-
 
 if __name__ == '__main__':
     main()
